@@ -558,6 +558,8 @@ if "include_business" not in st.session_state:
     st.session_state.include_business = False
 if "include_rental" not in st.session_state:
     st.session_state.include_rental = False
+if "include_education" not in st.session_state:
+    st.session_state.include_education = False
 if "include_starting_cash" not in st.session_state:
     st.session_state.include_starting_cash = True
 if "initial_cash" not in st.session_state:
@@ -570,6 +572,7 @@ time_horizon_years = int(st.session_state.master_horizon)
 retirement_age = int(st.session_state.retirement_age)
 include_business = bool(st.session_state.include_business)
 include_rental = bool(st.session_state.include_rental)
+include_education = bool(st.session_state.include_education)
 include_starting_cash = bool(st.session_state.include_starting_cash)
 st.sidebar.caption(
     f"Timeframe and retirement age sit under the master graph. "
@@ -1102,7 +1105,8 @@ def explain_plan(
         f"- Horizon **{comma(time_horizon_years)} years** from {irish_date(planning_start)}, "
         f"retirement age **{comma(retirement_age)}**. Starting cash **{money(plan_start_cash)}** "
         f"({'on' if include_starting_cash else 'off'}). "
-        f"Business **{'on' if include_business else 'off'}**, rental **{'on' if include_rental else 'off'}**."
+        f"Business **{'on' if include_business else 'off'}**, rental **{'on' if include_rental else 'off'}**, "
+        f"education / courses **{'on' if include_education else 'off'}**."
     )
     lines.append(
         f"- **Today’s cash in the bank: {money(today['cash'])}**. "
@@ -1360,6 +1364,11 @@ with earners_tab:
             )
 
             st.markdown("**Education / career investment for this earner**")
+            st.caption(
+                f"Sandbox until you turn **Education / courses** on beside the master graph "
+                f"(currently **{'on' if include_education else 'off'}**). "
+                "Off = these numbers stay here for ROI only and do not change pay, cash or Master."
+            )
             e1, e2, e3 = st.columns(3)
             with e1:
                 edu_cost = st.number_input(
@@ -1403,7 +1412,8 @@ with earners_tab:
             earner_rows.append(
                 {
                     "age": age, "gross": gross, "raise": raise_pct, "ee": ee_amt, "er": er_amt,
-                    "net": pack["net"], "pack": pack, "edu_cost": edu_cost, "edu_uplift": extra_net,
+                    "net": pack["net"], "pack": pack, "edu_cost": edu_cost,
+                    "edu_uplift": extra_net, "edu_gross": edu_uplift, "edu_years": edu_years,
                     "taxable_extras": cash_taxable - gross, "tax_free": tax_free_cash, "bik": bik_total,
                     "start_pension": start_pension,
                 }
@@ -1440,6 +1450,18 @@ with earners_tab:
                 pots[i] = pots[i] * r_pen + ee + er
                 year_gross += g + erow.get("taxable_extras", 0.0)
                 year_net += pack["net"]
+                if include_education:
+                    edu_span = int(erow.get("edu_years") or 0)
+                    extra_g = float(erow.get("edu_gross") or 0.0)
+                    extra_n = float(erow.get("edu_uplift") or 0.0)
+                    if yi == 0:
+                        year_net -= float(erow.get("edu_cost") or 0.0)
+                    if yi < edu_span and extra_g:
+                        year_gross += extra_g
+                        year_net += extra_n
+                        if erow["gross"]:
+                            pots[i] += extra_g * (earner_rows[i]["ee"] / erow["gross"])
+                            pots[i] += extra_g * (earner_rows[i]["er"] / erow["gross"])
             else:
                 pots[i] *= r_pen
                 if not retired_flags[i]:
@@ -1483,6 +1505,10 @@ with earners_tab:
     pay_left, pay_right = st.columns([1.7, 1], vertical_alignment="top")
     with pay_left:
         plot_money(pay_fig, snap="Pay and pension pots")
+        if include_education:
+            note("Education / courses is **on**: year-1 net is after course fees; extra net pay is added for the years you set on each earner.")
+        else:
+            note("Education / courses is **off**: the ROI box on each earner is a sandbox and is not in this pay graph or Master.")
     with pay_right:
         lump_year = int(pay_df.loc[pay_df["net"].idxmax(), "year"]) if not pay_df.empty else planning_start.year
         advice_box(
@@ -3039,9 +3065,11 @@ with overview:
         st.toggle("Include starting cash", key="include_starting_cash")
         st.toggle("Business", key="include_business")
         st.toggle("Rental property", key="include_rental")
+        st.toggle("Education / courses", key="include_education")
         note(
-            "Business and rental default **off**. Off = they are a sandbox on the Ventures tab and "
-            "**do not** change Master cash, spend, assets or Snapshot. Turn a switch on only if you want that venture in the plan."
+            "Business, rental and **education / courses** default **off**. Off = sandbox on their tab "
+            "(ROI on Earners, numbers on Ventures) and they **do not** change Master cash, pay or Snapshot. "
+            "Turn a switch on only if you want that line in the plan."
         )
         st.caption("Planner explainer — scroll inside this box")
         explainer_scroll(
