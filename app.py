@@ -343,10 +343,32 @@ def format_money_fig(fig):
     """Force €1,234.56 on every cash axis — no raw floats, no 1e6 notation."""
     fig.update_layout(separators=".,", font=dict(size=13))
     fig.update_yaxes(**AXIS_MONEY)
-    fig.update_xaxes(
+    year_vals: list[int] = []
+    for tr in fig.data:
+        xs = getattr(tr, "x", None)
+        if xs is None:
+            continue
+        try:
+            nums = [int(v) for v in list(xs) if v is not None and str(v) != "nan"]
+        except (TypeError, ValueError):
+            continue
+        if nums and min(nums) >= 1900 and max(nums) <= 2200:
+            tr.x = nums
+            year_vals.extend(nums)
+    xaxis_kw = dict(
+        type="linear",
+        tickformat=".0f",
+        showexponent="none",
+        exponentformat="none",
+        separatethousands=False,
         showgrid=True, gridwidth=1, griddash="dot", automargin=True, nticks=12,
-        separatethousands=False, tickformat="d",
     )
+    if year_vals:
+        lo, hi = min(year_vals), max(year_vals)
+        span = max(hi - lo, 1)
+        dtick = 5 if span <= 40 else 10 if span <= 80 else 20
+        xaxis_kw.update(range=[lo - 0.5, hi + 0.5], dtick=dtick, tick0=lo)
+    fig.update_xaxes(**xaxis_kw)
     fig.update_layout(
         yaxis_tickformat=",.2f", yaxis_tickprefix=cur, yaxis_exponentformat="none",
         yaxis_separatethousands=True, yaxis_hoverformat=",.2f",
@@ -376,7 +398,7 @@ def format_money_fig(fig):
         )
     for tr in fig.data:
         if getattr(tr, "type", None) in ("bar", "scatter"):
-            tr.hovertemplate = f"{cur}%{{y:,.2f}}<extra>%{{fullData.name}}</extra>"
+            tr.hovertemplate = f"%{{x:.0f}} · {cur}%{{y:,.2f}}<extra>%{{fullData.name}}</extra>"
     return fig
 
 
@@ -564,7 +586,7 @@ plan_start_cash = initial_cash if include_starting_cash else 0.0
 monthly_investments = st.sidebar.number_input("Monthly investments (€)", min_value=0.0, value=250.0, step=50.0, format="%.2f")
 mortgage_balance = st.sidebar.number_input("Mortgage balance (€)", min_value=0.0, value=250_000.0, step=5_000.0, format="%.2f")
 home_value = st.sidebar.number_input("Home value (€)", min_value=0.0, value=350_000.0, step=5_000.0, format="%.2f")
-annual_return = st.sidebar.slider("Assumed investment return (annual %)", 0.0, 15.0, 6.0, 0.1)
+annual_return = st.sidebar.slider("Assumed investment return (annual %)", 0.0, 15.0, 6.5, 0.1)
 mortgage_rate = st.sidebar.slider("Assumed mortgage rate (annual %)", 0.0, 12.0, 4.0, 0.1)
 monthly_mortgage_payment = st.sidebar.number_input(
     "Monthly mortgage payment (€)", min_value=0.0, value=1_200.0, step=50.0, format="%.2f"
@@ -1864,38 +1886,99 @@ with investments_tab:
     existing_investments = float(st.session_state.existing_investments)
     st.markdown(
         """
-What each sleeve *means* (indicative Irish tax, not advice):
-
-| Sleeve | What it is | Tax while you hold | Tax when you sell / every 8 years |
-| --- | --- | --- | --- |
-| **UCITS ETF** | Broad funds (world/S&P) | None inside the fund | **41% exit tax** and **deemed disposal every 8 years** |
-| **Dividend Kings** | High-quality dividend shares | **33%** on dividends | **33% CGT** on gains |
-| **Common stocks** | Ordinary growth shares | **33%** on any small dividend | **33% CGT** on gains |
-| **ROCE / quality** | Compounders with high return on capital | **33%** on modest dividends | **33% CGT** on gains |
-| **Bonds (UCITS)** | Gov/aggregate bond funds | None inside the fund | **41% exit tax** and **8-year deemed disposal** |
-
-Pensions (Earners tab) are separate: growth is tax-free in the fund.
+This tab is the **taxable** pot (broker account). Occupational / PRSA pensions on Earners grow tax-free inside the fund and are not mixed in here.
+Irish wrappers are not the same: **funds 41%** with an 8-year deemed disposal; **direct shares 33%** CGT / dividend tax. Indicative, not Revenue advice.
         """
     )
+    with st.expander("UCITS ETF — what this sleeve is", expanded=True):
+        st.markdown(
+            """
+A **UCITS ETF** is a listed fund (world, S&P 500, Europe, etc.) that holds hundreds of companies for you. In Ireland the usual retail wrappers are accumulating ETFs (VWCE, IWDA and similar). Dividends are kept inside the fund, so you do not get a cash dividend line.
+
+**Irish tax:** 41% **exit tax**. Every **8 years** Revenue treats you as if you sold (deemed disposal) even if you did not. There is **no** €1,270 CGT exemption and **no** 33% CGT rate. That 8-year bill is the drag vs owning shares yourself.
+
+**Return slider:** one total **gross** growth rate before that 41%. A long-run planning figure for a world equity ETF is about **6–7%**, not 4% and not 10%.
+
+**When it is useful:** one-click diversification if you will not pick shares. Fine as a **core**. Weak as a **bond** substitute (same 41% on a low return).
+            """
+        )
+    with st.expander("Bonds (UCITS) — what this sleeve is"):
+        st.markdown(
+            """
+Government and corporate **bond funds** (euro aggregate, Irish/Euro gov). Price wiggles when rates move; the long-run return is close to the starting yield.
+
+**Irish tax:** a **bond UCITS is still 41% exit tax and 8-year deemed disposal** — the same ugly wrapper as an equity ETF. 41% of a 3% yield is a lot of drag. This planner is not modelling individual Irish gov bonds held to maturity, which can be taxed differently.
+
+**Return slider:** total gross return, not the coupon on one bond. About **2.5–3.5%** is a current-era euro planning band.
+
+**When it is useful:** a **small** ballast if you cannot stomach a 100% equity taxable pot. For a 30-year-old accumulator, **0–10%** is already plenty. Do not copy a US 60/40 here: the Irish fund tax is harsher on the 40.
+            """
+        )
+    with st.expander("Dividend Kings — what this sleeve is"):
+        st.markdown(
+            """
+**Direct shares** of companies that have raised (or at least paid) dividends for a long time — consumer staples, some health care, utilities. You own the shares; you are not in the 41% fund regime.
+
+**Irish tax:** **33%** on dividends **in the year they are paid**, even if you click reinvest. **33% CGT** on price gains when you sell (this model reserves CGT as gains accrue). The annual **€1,270 CGT exemption** exists in real life; it is **not** modelled here.
+
+**Two sliders:** **price growth** + **dividend yield** = total gross return. They must not both be “market plus extra”. A honest pair is about **4.5% growth + 2.5% yield ≈ 7%** total. High yield is not free: you pay 33% on that cash every year, so after-tax this sleeve often lags a low-yield share sleeve.
+
+**When it is useful:** if you want cash income and will hold names yourself. It is **not** a different tax class from Common stocks or ROCE — only the yield/growth mix changes.
+            """
+        )
+    with st.expander("Common stocks — what this sleeve is"):
+        st.markdown(
+            """
+Ordinary **growth-leaning shares** (global or Irish/EU names) with little dividend. Same legal wrapper as Dividend Kings: you hold the shares.
+
+**Irish tax:** small dividends **33%** as paid; **33% CGT** on the gain. Because yield is low, most of the tax waits until you sell. That is why this sleeve often **beats Kings after tax** at the same 7% gross total return.
+
+**Two sliders:** **growth** + **yield**. Keep the sum near the ETF rate (about **6% + 1% ≈ 7%**). 8% growth plus yield is assuming you outperform the world fund.
+
+**When it is useful:** the default “I will own shares, I am not collecting a big dividend” bucket. Needs a broker, dealing charges, and you accept concentration risk the ETF does not have.
+            """
+        )
+    with st.expander("ROCE / quality — what this sleeve is"):
+        st.markdown(
+            """
+**ROCE** is return on capital employed: profit versus the capital stuck in the business. A “quality” or compounder screen (high ROCE, high margins, reinvestment) is **not** a separate asset class and **not** a different Irish tax. Same 33% / 33% as other shares.
+
+It is **not** the same idea as Dividend Kings. Kings pay cash out; quality names often **keep** cash and grow book value. You might hold both, but do not count them as one sleeve.
+
+**Two sliders:** keep total return in line with the ETF (**~6.5% growth + 1% yield**). **Do not** set 9% growth as a “quality bonus” unless you are stress-testing a bull case. Quality can lag for years.
+
+**When it is useful:** if you will actually pick a short list of compounders. If not, leave the weight at 0 and put it in the ETF.
+            """
+        )
+    with st.expander("How to set the % and return sliders"):
+        st.markdown(
+            """
+1. Make the five **weights add to 100**. If they do not, the caption below the sliders shows the scaled mix the model actually uses.
+2. A simple long-horizon Irish **starter mix**: ETF **60** · Bonds **10** · Kings **10** · Common **10** · ROCE **10**.
+3. Prefer Irish share tax (no 8-year deemed): ETF **30** · Bonds **10** · Kings **20** · Common **20** · ROCE **20**.
+4. Put **equity** returns around **6.5–7%** total (growth + yield). Bonds around **3%**. Match the ETF slider to the sidebar “assumed investment return” so Master and this tab tell the same story.
+5. **Pension % on Earners** is the tax-free compounder. This tab is only money that will pay 33% or 41%.
+            """
+        )
 
     st.markdown("**Split of taxable investing (existing pot + monthly contribution)**")
     note("Weights are scaled to 100% if they do not add up. This is the taxable pot, not the pension.")
     a1, a2, a3, a4, a5 = st.columns(5)
     with a1:
-        w_etf = st.slider("UCITS ETF %", 0, 100, 30, 5)
-        note("Simple, diversified — but 41% and 8-year deemed disposal is a real drag vs shares.")
+        w_etf = st.slider("UCITS ETF %", 0, 100, 60, 5, help="Broad world/S&P listed fund. Irish tax: 41% exit tax and deemed disposal every 8 years.")
+        note("One-click diversification. 41% + 8-year deemed disposal is the Irish fund drag.")
     with a2:
-        w_bonds = st.slider("Bonds %", 0, 100, 15, 5)
-        note("Bond UCITS in Ireland is usually the same 41% exit tax as equity ETFs.")
+        w_bonds = st.slider("Bonds %", 0, 100, 10, 5, help="Bond UCITS. Same 41% Irish fund tax as equity ETFs — keep this sleeve small.")
+        note("Same 41% wrapper as ETFs, on a ~3% return. 0–10% is enough at a young age.")
     with a3:
-        w_kings = st.slider("Dividend Kings %", 0, 100, 15, 5)
-        note("Cash yield each year, taxed 33%, even if you reinvest.")
+        w_kings = st.slider("Dividend Kings %", 0, 100, 10, 5, help="Direct high-dividend shares. 33% on dividends each year, 33% CGT on gains.")
+        note("Cash yield taxed 33% every year, even if you reinvest. Not the same idea as ROCE.")
     with a4:
-        w_common = st.slider("Common stocks %", 0, 100, 20, 5)
-        note("More price growth, little dividend. CGT only when you (or we, at the horizon) sell.")
+        w_common = st.slider("Common stocks %", 0, 100, 10, 5, help="Direct growth-leaning shares, low yield. 33% CGT, 33% on any small dividend.")
+        note("Low yield, so more of the tax waits until you sell. Same 33% share tax as Kings/ROCE.")
     with a5:
-        w_roce = st.slider("ROCE / quality %", 0, 100, 20, 5)
-        note("Quality compounders: assume slightly higher growth, still 33%/33% share tax.")
+        w_roce = st.slider("ROCE / quality %", 0, 100, 10, 5, help="Direct quality/compounder shares. Same 33% tax as other shares — not a bonus return by itself.")
+        note("Quality compounders, not Dividend Kings. Same 33% tax; do not assume extra return.")
 
     wsum = w_etf + w_bonds + w_kings + w_common + w_roce
     if wsum <= 0:
@@ -1912,19 +1995,44 @@ Pensions (Earners tab) are separate: growth is tax-free in the fund.
 
     s1, s2, s3, s4, s5 = st.columns(5)
     with s1:
-        etf_return = st.slider("ETF gross return %", 0.0, 12.0, float(annual_return), 0.1)
+        etf_return = st.slider(
+            "ETF gross return %", 0.0, 12.0, 6.5, 0.1,
+            help="Total return before 41% Irish exit tax. ~6.5–7% is a long-run world equity planning rate.",
+        )
+        note("Gross, before 41%. Keep near the sidebar investment return.")
     with s2:
-        bond_return = st.slider("Bond gross return %", 0.0, 8.0, 3.2, 0.1)
-        note("Indicative euro aggregate / Irish gov mix. Not a yield quote.")
+        bond_return = st.slider(
+            "Bond gross return %", 0.0, 8.0, 3.0, 0.1,
+            help="Total return before 41% fund tax. Euro gov/aggregate, not a 1990s coupon.",
+        )
+        note("Euro aggregate / Irish gov mix, before 41%. Not a live yield quote.")
     with s3:
-        king_growth = st.slider("Kings price growth %", 0.0, 12.0, 6.0, 0.1)
-        king_yield = st.slider("Kings dividend yield %", 0.0, 6.0, 2.8, 0.1)
+        king_growth = st.slider(
+            "Kings price growth %", 0.0, 12.0, 4.5, 0.1,
+            help="Share-price rise only. Add the dividend yield below for total return (~7%).",
+        )
+        king_yield = st.slider(
+            "Kings dividend yield %", 0.0, 6.0, 2.5, 0.1,
+            help="Cash dividends. Irish tax 33% is taken every year in this model, even if reinvested.",
+        )
     with s4:
-        common_growth = st.slider("Common stocks growth %", 0.0, 14.0, 8.0, 0.1)
-        common_yield = st.slider("Common stocks yield %", 0.0, 3.0, 0.6, 0.1)
+        common_growth = st.slider(
+            "Common stocks growth %", 0.0, 14.0, 6.0, 0.1,
+            help="Price growth. Plus yield ≈ ETF rate unless you are assuming you beat the market.",
+        )
+        common_yield = st.slider(
+            "Common stocks yield %", 0.0, 3.0, 1.0, 0.1,
+            help="Small dividends, 33% as paid. Low yield means more of the tax waits for CGT.",
+        )
     with s5:
-        roce_growth = st.slider("ROCE growth %", 0.0, 14.0, 9.0, 0.1)
-        roce_yield = st.slider("ROCE yield %", 0.0, 4.0, 1.2, 0.1)
+        roce_growth = st.slider(
+            "ROCE growth %", 0.0, 14.0, 6.5, 0.1,
+            help="Do not add a ‘quality bonus’ on top of the world ETF rate unless you are testing a bull case.",
+        )
+        roce_yield = st.slider(
+            "ROCE yield %", 0.0, 4.0, 1.0, 0.1,
+            help="Modest payout. Same 33% dividend tax as other shares.",
+        )
 
     note(
         "This tab is the investment sleeves only. Putting extra cash on the **mortgage** (an overpayment) is on the Housing tab. "
@@ -2756,7 +2864,7 @@ projection = project_finances(
     start_investments=float(st.session_state.existing_investments),
 )
 yearly = projection[projection["month"] % 12 == 0].copy()
-yearly["calendar_year"] = planning_start.year + yearly["year"].round().astype(int)
+yearly["calendar_year"] = (planning_start.year + yearly["year"].round()).astype(int)
 
 spend_rows = []
 asset_rows = []
@@ -2831,6 +2939,10 @@ for _, prow in yearly.iterrows():
     )
 assets_df = pd.DataFrame(asset_rows)
 spend_df = pd.DataFrame(spend_rows)
+if not assets_df.empty:
+    assets_df["year"] = assets_df["year"].astype(int)
+if not spend_df.empty:
+    spend_df["year"] = spend_df["year"].astype(int)
 today_a = assets_df.iloc[0]
 end_a = assets_df.iloc[-1]
 
