@@ -1,8 +1,10 @@
-# Personal Finance Dashboard
+# Ireland Household Planner
 
-Generic Ireland-first household planner (Streamlit). No personal data is stored in the code. What you type stays in your browser session.
+Example Irish household calculator for pay, housing, pensions, cars, and investing. Open it, change the starter figures, and model a plan.
 
-## Run locally
+Public app: https://financial-dashboard-gallant.streamlit.app/
+
+## Run on your computer
 
 ```text
 py -3 -m pip install -r requirements.txt
@@ -11,19 +13,8 @@ py -3 -m streamlit run app.py
 
 Open http://localhost:8501
 
-## Share with friends or the public (Streamlit Community Cloud)
+Starter numbers are round examples (for example two people aged 30 on €50,000, €10,000 cash, one car, no children). They are not a real household file. Each visitor’s inputs stay in their own browser.
 
-This is a calculator, not a login product. Anyone with the link can move sliders. Do not type real account numbers, PPS numbers, or passwords into it.
+## Deploy your own copy
 
-1. Put the project on a **GitHub** repository (`app.py`, `requirements.txt`, `.streamlit/config.toml`). Keep it free of `.env` and credentials.
-2. Sign in at [share.streamlit.io](https://share.streamlit.io) with GitHub.
-3. **New app** → pick the repo → main file `app.py` → Deploy.
-4. You get a public URL such as `https://your-app-name.streamlit.app`. Send that to friends, or leave it public.
-
-Each visitor gets their own session. They do not see each other’s numbers.
-
-## What is in the defaults
-
-Round Irish planning figures only (example salaries, a €25,000 cash start, catalogue car prices, typical bank rate bands). Nothing is a real person’s file.
-
-Business and rental are **off** on the master graph until someone turns them on.
+Streamlit Community Cloud rebuilds from the connected GitHub branch when you push. Sign in at https://share.streamlit.io, pick this repository, main file `app.py`, and deploy.

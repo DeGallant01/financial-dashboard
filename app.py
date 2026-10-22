@@ -1,4 +1,4 @@
-"""Personal finance dashboard — generic Ireland/DE/BE planner. No personal data."""
+"""Ireland household planner — example figures only."""
 
 from __future__ import annotations
 
@@ -264,7 +264,7 @@ MORTGAGE_MARKETS: dict[str, dict] = {
     },
 }
 
-st.set_page_config(page_title="Personal Finance Dashboard", page_icon="💹", layout="wide")
+st.set_page_config(page_title="Ireland Household Planner", page_icon="💹", layout="wide")
 
 st.sidebar.header("Go to a section")
 st.sidebar.caption("The large tab bar under the master graph matches this list. Pick a tab any time — it stays on the page.")
@@ -539,7 +539,7 @@ if "include_rental" not in st.session_state:
 if "include_starting_cash" not in st.session_state:
     st.session_state.include_starting_cash = True
 if "initial_cash" not in st.session_state:
-    st.session_state.initial_cash = 25_000.0
+    st.session_state.initial_cash = 10_000.0
 if "existing_investments" not in st.session_state:
     st.session_state.existing_investments = 0.0
 if "chart_place" not in st.session_state:
@@ -557,17 +557,17 @@ STATE_PENSION = 14_420.0  # ~max contributory, weekly × 52, taxable, indicative
 
 st.sidebar.divider()
 st.sidebar.header("Global parameters")
-st.sidebar.caption("Generic euro amounts for modelling only. Totals use 1,234 separators. Starting cash is the amount box above the master graph.")
+st.sidebar.caption("Starter figures are round examples. Starting cash is the amount box above the master graph.")
 
 initial_cash = float(st.session_state.initial_cash)
 plan_start_cash = initial_cash if include_starting_cash else 0.0
-monthly_investments = st.sidebar.number_input("Monthly investments (€)", min_value=0.0, value=1_500.0, step=100.0, format="%.2f")
-mortgage_balance = st.sidebar.number_input("Mortgage balance (€)", min_value=0.0, value=350_000.0, step=5_000.0, format="%.2f")
-home_value = st.sidebar.number_input("Home value (€)", min_value=0.0, value=500_000.0, step=5_000.0, format="%.2f")
-annual_return = st.sidebar.slider("Assumed investment return (annual %)", 0.0, 15.0, 7.0, 0.1)
-mortgage_rate = st.sidebar.slider("Assumed mortgage rate (annual %)", 0.0, 12.0, 3.8, 0.1)
+monthly_investments = st.sidebar.number_input("Monthly investments (€)", min_value=0.0, value=250.0, step=50.0, format="%.2f")
+mortgage_balance = st.sidebar.number_input("Mortgage balance (€)", min_value=0.0, value=250_000.0, step=5_000.0, format="%.2f")
+home_value = st.sidebar.number_input("Home value (€)", min_value=0.0, value=350_000.0, step=5_000.0, format="%.2f")
+annual_return = st.sidebar.slider("Assumed investment return (annual %)", 0.0, 15.0, 6.0, 0.1)
+mortgage_rate = st.sidebar.slider("Assumed mortgage rate (annual %)", 0.0, 12.0, 4.0, 0.1)
 monthly_mortgage_payment = st.sidebar.number_input(
-    "Monthly mortgage payment (€)", min_value=0.0, value=1_900.0, step=50.0, format="%.2f"
+    "Monthly mortgage payment (€)", min_value=0.0, value=1_200.0, step=50.0, format="%.2f"
 )
 
 
@@ -1140,10 +1140,10 @@ def explain_plan(
     return "\n\n".join(lines)
 
 
-st.title("Personal Finance Dashboard")
+st.title("Ireland Household Planner")
 st.write(
-    "Generic Ireland-first planner. Dates use dd/mm/yyyy. Cash figures use 1,234.56 (thousands commas, two decimals). "
-    "The code and factory defaults are not anyone’s real finances. Nothing you type is saved to disk — it lives in this browser session only."
+    "Example Irish household calculator for pay, housing, pensions, cars, and investing. "
+    "Dates are dd/mm/yyyy. Cash uses 1,234.56. Change the starter numbers to model any household."
 )
 st.markdown(
     """
@@ -1203,29 +1203,29 @@ with earners_tab:
             st.markdown(f"### Earner {i + 1}")
             g1, g2, g3 = st.columns(3)
             with g1:
-                age = st.slider("Age", 22, 67, 34 if i == 0 else 32, key=f"earner_age_{i}")
+                age = st.slider("Age", 22, 67, 30, key=f"earner_age_{i}")
                 note("Age sets the max tax-relieved pension % of earnings (15% under 30, up to 40% from 60). Earnings cap ~€115,000.")
             with g2:
                 gross = st.number_input(
                     "Gross salary / year (€)", min_value=0.0,
-                    value=75_000.0 if i == 0 else 55_000.0, step=1_000.0, format=MONEY_FMT, key=f"earner_gross_{i}",
+                    value=50_000.0, step=1_000.0, format=MONEY_FMT, key=f"earner_gross_{i}",
                 )
                 note("Ireland full-time: ~€35k–45k lower; €50k–80k typical professional; €90k+ senior. Dublin often higher.")
             with g3:
-                raise_pct = st.slider("Expected raise % / year", 0.0, 12.0, 3.0, 0.1, key=f"earner_raise_{i}")
+                raise_pct = st.slider("Expected raise % / year", 0.0, 12.0, 2.0, 0.1, key=f"earner_raise_{i}")
                 note("Cost-of-living 2–3%; promotion years 5–10%.")
 
             p1, p2, p3 = st.columns(3)
             with p1:
-                ee_pct = st.slider("Your pension contribution % of salary", 0.0, 40.0, 7.0, 0.5, key=f"earner_ee_{i}")
+                ee_pct = st.slider("Your pension contribution % of salary", 0.0, 40.0, 5.0, 0.5, key=f"earner_ee_{i}")
                 note("Common: 5–7% employee. Higher if catching up. Relief is valuable at 40% income tax. Pension % is on basic salary, not car allowance or BIK.")
             with p2:
-                er_pct = st.slider("Employer pension % of salary", 0.0, 20.0, 7.0, 0.5, key=f"earner_er_{i}")
+                er_pct = st.slider("Employer pension % of salary", 0.0, 20.0, 5.0, 0.5, key=f"earner_er_{i}")
                 note("Many Irish employers match 5–7%. Employer money is extra compensation, not from your net pay.")
             with p3:
                 start_pension = st.number_input(
                     "Starting pension pot (€)", min_value=0.0,
-                    value=40_000.0 if i == 0 else 25_000.0, step=1_000.0,
+                    value=0.0, step=1_000.0,
                     format=MONEY_FMT, key=f"earner_pot_{i}",
                 )
                 note("What is already in this person’s occupational/PRSA/RAC pot today. It then grows with contributions and the assumed return.")
@@ -1341,13 +1341,13 @@ with earners_tab:
             e1, e2, e3 = st.columns(3)
             with e1:
                 edu_cost = st.number_input(
-                    "Upfront cost from net pay (€)", min_value=0.0, value=8_000.0 if i == 0 else 0.0,
+                    "Upfront cost from net pay (€)", min_value=0.0, value=0.0,
                     step=500.0, key=f"edu_cost_{i}",
                 )
                 note("Part-time MSc/certs €3k–12k; MBA €20k–50k. Paid from after-tax cash unless employer-funded.")
             with e2:
                 edu_uplift = st.number_input(
-                    "Extra gross salary from it (€ / year)", min_value=0.0, value=8_000.0 if i == 0 else 0.0,
+                    "Extra gross salary from it (€ / year)", min_value=0.0, value=0.0,
                     step=500.0, key=f"edu_uplift_{i}",
                 )
                 note("Be conservative: not every course moves pay. €3k–10k is a solid professional bump.")
@@ -1488,7 +1488,7 @@ with housing_tab:
     with h3:
         mortgage_term = st.slider("Term (years)", 10, 35, 30, 1)
     with h4:
-        house_date = date_field("Target purchase date", date(planning_start.year + 1, 6, 1), key="house_date")
+        house_date = date_field("Target purchase date", date(planning_start.year + 1, 1, 1), key="house_date")
 
     hp1, hp2, hp3 = st.columns(3)
     with hp1:
@@ -1663,25 +1663,25 @@ with housing_tab:
     st.markdown("**Home running costs, maintenance and works**")
     r1, r2, r3, r4 = st.columns(4)
     with r1:
-        home_ins = st.number_input("Buildings + contents insurance / year (€)", min_value=0.0, value=850.0, step=50.0)
+        home_ins = st.number_input("Buildings + contents insurance / year (€)", min_value=0.0, value=800.0, step=50.0)
         note("Typical Ireland: €500–700 modest house; €800–1,200 average; €1,500+ higher rebuild / Dublin contents.")
     with r2:
         maint_pct = st.slider("Maintenance allowance (% of home value / year)", 0.0, 3.0, 1.0, 0.1)
         st.caption(f"= **{money(home_value * maint_pct / 100)} / year** on a {money(home_value)} home.")
         note("Rule of thumb: 0.5% light; 1% standard sinking fund; 1.5–2% older houses.")
     with r3:
-        n_works = st.slider("Renovation / extension projects", 0, 3, 1)
+        n_works = st.slider("Renovation / extension projects", 0, 3, 0)
         note("Kitchen €15k–40k; single-storey extension €40k–90k; larger/two-storey €90k–180k+ (indicative).")
     with r4:
-        lpt = st.number_input("Local property tax / year (€)", min_value=0.0, value=450.0, step=25.0, format=MONEY_FMT)
+        lpt = st.number_input("Local property tax / year (€)", min_value=0.0, value=400.0, step=25.0, format=MONEY_FMT)
         note("LPT is banded on value. Many 3-bed houses sit roughly €300–700.")
 
     u1, u2, u3 = st.columns(3)
     with u1:
-        power_y = st.number_input("Electricity / year (€)", min_value=0.0, value=1_800.0, step=50.0, format=MONEY_FMT)
+        power_y = st.number_input("Electricity / year (€)", min_value=0.0, value=1_500.0, step=50.0, format=MONEY_FMT)
         note("Typical Irish house: ~€1,200–2,200 depending on heat source and BER.")
     with u2:
-        heat_y = st.number_input("Heat (gas / oil / heat pump extra) / year (€)", min_value=0.0, value=1_400.0, step=50.0, format=MONEY_FMT)
+        heat_y = st.number_input("Heat (gas / oil / heat pump extra) / year (€)", min_value=0.0, value=1_200.0, step=50.0, format=MONEY_FMT)
         note("Gas 3-bed often €1,000–1,800; oil higher; heat-pump kWh often sits in the electricity line instead.")
     with u3:
         bb_y = st.number_input("Broadband / year (€)", min_value=0.0, value=600.0, step=24.0, format=MONEY_FMT)
@@ -1694,7 +1694,7 @@ with housing_tab:
             with w1:
                 w_date = date_field("Target date", date(house_date.year + 2 + i * 3, 4, 1), key=f"works_date_{i}")
             with w2:
-                w_cost = st.number_input("Budget (€)", min_value=0.0, value=25_000.0 + i * 15_000, step=1_000.0, key=f"works_cost_{i}")
+                w_cost = st.number_input("Budget (€)", min_value=0.0, value=20_000.0, step=1_000.0, key=f"works_cost_{i}")
             with w3:
                 w_uplift = st.slider("Estimated value added (%)", 0, 80, 40, key=f"works_uplift_{i}")
                 st.caption(
@@ -1770,7 +1770,7 @@ with housing_tab:
     reno_rows = []
     for mitem in measures:
         with st.expander(mitem["label"], expanded=False):
-            on = st.checkbox("Include this measure", value=mitem["id"] in {"pv", "ashp"}, key=f"rn_on_{mitem['id']}")
+            on = st.checkbox("Include this measure", value=False, key=f"rn_on_{mitem['id']}")
             g1, g2, g3, g4 = st.columns(4)
             with g1:
                 cost = st.number_input("Installed cost (€)", min_value=0.0, value=float(mitem["cost"]), step=250.0, key=f"rn_cost_{mitem['id']}")
@@ -2042,7 +2042,7 @@ with ventures_tab:
     with b1:
         biz_start = date_field("Start date", date(planning_start.year + 1, 1, 1), key="biz_start")
     with b2:
-        biz_capital = st.number_input("Cash you put in (€)", min_value=0.0, value=25_000.0, step=1_000.0)
+        biz_capital = st.number_input("Cash you put in (€)", min_value=0.0, value=10_000.0, step=1_000.0)
         note("Seed from savings. Not tax-deductible as a gift to yourself; company share capital is locked in.")
     with b3:
         biz_loss_years = st.slider("Years until it makes a profit", 0, 8, 2)
@@ -2058,10 +2058,10 @@ with ventures_tab:
 
     b5, b6, b7 = st.columns(3)
     with b5:
-        biz_loss = st.number_input("Cash burn / year before profit (€)", min_value=0.0, value=8_000.0, step=500.0)
+        biz_loss = st.number_input("Cash burn / year before profit (€)", min_value=0.0, value=5_000.0, step=500.0)
         note("Tools, insurance, accounting, a bit of marketing.")
     with b6:
-        biz_profit = st.number_input("Steady profit / year after that (€)", min_value=0.0, value=30_000.0, step=1_000.0)
+        biz_profit = st.number_input("Steady profit / year after that (€)", min_value=0.0, value=20_000.0, step=1_000.0)
         note("Profit *before* owner pay. Be conservative.")
     with b7:
         extract_pct = st.slider("% of company profit taken out as salary/dividend", 0, 100, 50, 5)
@@ -2146,7 +2146,7 @@ with ventures_tab:
     with r1:
         rent_date = date_field("Purchase date", date(planning_start.year + 2, 3, 1), key="rent_date")
     with r2:
-        rent_price = st.number_input("Purchase price (€)", min_value=0.0, value=320_000.0, step=5_000.0)
+        rent_price = st.number_input("Purchase price (€)", min_value=0.0, value=250_000.0, step=5_000.0)
         note("Regional Ireland often €220k–350k; Dublin city much more.")
     with r3:
         rent_dep = st.slider("Deposit %", 10, 50, 30, 5)
@@ -2157,7 +2157,7 @@ with ventures_tab:
 
     r5, r6, r7, r8 = st.columns(4)
     with r5:
-        monthly_rent = st.number_input("Monthly rent (€)", min_value=0.0, value=1_800.0, step=50.0)
+        monthly_rent = st.number_input("Monthly rent (€)", min_value=0.0, value=1_500.0, step=50.0)
         note("Gross yield = rent × 12 / price. 5–8% is a common talking range before costs and tax.")
     with r6:
         occupancy = st.slider("Occupancy %", 70, 100, 95, 1)
@@ -2272,17 +2272,17 @@ with auto_tab:
     with top1:
         country = st.selectbox("Vehicle market", list(CAR_MARKETS.keys()), index=0)
     with top2:
-        n_cars = st.slider("Cars in household", 1, 3, 2)
+        n_cars = st.slider("Cars in household", 1, 3, 1)
     with top3:
-        default_replace = st.slider("Default replacement cycle (years)", 3, 15, 6)
+        default_replace = st.slider("Default replacement cycle (years)", 3, 15, 8)
     market = CAR_MARKETS[country]
     st.caption(
         market["note"]
         + f" Petrol {money(market['petrol'], 2)}/L · diesel {money(market['diesel'], 2)}/L · electricity {money(market['electricity'], 2)}/kWh."
     )
 
-    default_brands = ["Toyota", "Skoda", "Volkswagen"]
-    default_models = ["Toyota RAV4 PHEV", "Skoda Octavia", "VW Golf"]
+    default_brands = ["Toyota", "Toyota", "Toyota"]
+    default_models = ["Toyota Yaris Cross Hybrid", "Toyota Yaris Cross Hybrid", "Toyota Yaris Cross Hybrid"]
     slots: list[dict] = []
     car_cols = st.columns(n_cars)
     for i in range(n_cars):
@@ -2471,7 +2471,7 @@ with family_tab:
     )
     f1, f2, f3, f4 = st.columns(4)
     with f1:
-        n_children = st.slider("Number of children", 0, 6, 2)
+        n_children = st.slider("Number of children", 0, 6, 0)
     with f2:
         childcare_until = st.slider("Childcare until age", 0, 8, 5)
         note("ECCE preschool often from ~2 years 8 months; many use paid care until 4–5.")
@@ -2490,9 +2490,9 @@ with family_tab:
             st.markdown(f"**Child {comma(i + 1)}**")
             a, b, c = st.columns(3)
             with a:
-                birth = date_field("Birth date", date(planning_start.year - (2 + i * 3), 9, 1), key=f"birth_{i}")
+                birth = date_field("Birth date", date(planning_start.year - 5, 1, 1), key=f"birth_{i}")
             with b:
-                college = st.checkbox("Plans to attend college", value=(i == 0), key=f"col_{i}")
+                college = st.checkbox("Plans to attend college", value=False, key=f"col_{i}")
             with c:
                 college_start = date_field(
                     "College start date", date(birth.year + 18, 9, 1), key=f"colstart_{i}", disabled=not college,
@@ -2647,27 +2647,27 @@ with lifestyle_tab:
     st.caption("Food, clothing, holidays and hobbies. Amounts inflate from the planning start date.")
     l1, l2, l3, l4 = st.columns(4)
     with l1:
-        food_m = st.number_input("Food / month (€)", min_value=0.0, value=900.0, step=25.0, format=MONEY_FMT)
+        food_m = st.number_input("Food / month (€)", min_value=0.0, value=800.0, step=25.0, format=MONEY_FMT)
         note("Groceries, household of 2–4: often €500–800 modest; €800–1,200 typical; €1,400+ plenty of extras.")
     with l2:
-        clothes_m = st.number_input("Clothing / month (€)", min_value=0.0, value=150.0, step=10.0, format=MONEY_FMT)
+        clothes_m = st.number_input("Clothing / month (€)", min_value=0.0, value=100.0, step=10.0, format=MONEY_FMT)
         note("Adults ~€50–150 each; kids grow fast ~€40–100.")
     with l3:
         holiday_adults = st.number_input(
-            "Holidays / year — adults only (€)", min_value=0.0, value=2_500.0, step=250.0, format=MONEY_FMT,
+            "Holidays / year — adults only (€)", min_value=0.0, value=2_000.0, step=250.0, format=MONEY_FMT,
         )
         note("Couple, week in Europe ~€1,500–3,000; long-haul more. Used in years with no child under 18 at home.")
     with l4:
         holiday_family = st.number_input(
-            "Holidays / year — with children (€)", min_value=0.0, value=5_500.0, step=250.0, format=MONEY_FMT,
+            "Holidays / year — with children (€)", min_value=0.0, value=4_000.0, step=250.0, format=MONEY_FMT,
         )
         note("Family of 3–4, week in Europe ~€3,500–7,000. Used while any child is under 18.")
     l5, l6, l7 = st.columns(3)
     with l5:
-        hobby_m = st.number_input("Hobbies / month (€)", min_value=0.0, value=120.0, step=10.0, format=MONEY_FMT)
+        hobby_m = st.number_input("Hobbies / month (€)", min_value=0.0, value=100.0, step=10.0, format=MONEY_FMT)
         note("Gym €40–70; clubs/sports €20–80; a serious hobby can be €150–400.")
     with l6:
-        eating_out_m = st.number_input("Eating out / month (€)", min_value=0.0, value=200.0, step=10.0, format=MONEY_FMT)
+        eating_out_m = st.number_input("Eating out / month (€)", min_value=0.0, value=150.0, step=10.0, format=MONEY_FMT)
         note("A couple of casual meals: ~€80–150; regular dining out €250–500.")
     with l7:
         inflate = st.slider("Lifestyle inflation (% / year)", 0.0, 8.0, 2.5, 0.1)
@@ -2676,16 +2676,16 @@ with lifestyle_tab:
     st.markdown("**Medical and other lifetime costs people forget**")
     m1, m2, m3, m4 = st.columns(4)
     with m1:
-        med_ins = st.number_input("Private health insurance / year (€)", min_value=0.0, value=2_400.0, step=100.0, format=MONEY_FMT)
+        med_ins = st.number_input("Private health insurance / year (€)", min_value=0.0, value=2_000.0, step=100.0, format=MONEY_FMT)
         note("VHI/Laya/Irish Life: ~€1,000–1,800 per adult; family plans often €2,400–4,500. Employer-paid cover can be a BIK on Earners.")
     with m2:
-        med_oop = st.number_input("GP / dentist / pharmacy / year (€)", min_value=0.0, value=800.0, step=50.0, format=MONEY_FMT)
+        med_oop = st.number_input("GP / dentist / pharmacy / year (€)", min_value=0.0, value=500.0, step=50.0, format=MONEY_FMT)
         note("Even with insurance: excesses, dentist, physio, glasses. €500–1,500 is a common household plug.")
     with m3:
-        life_ins = st.number_input("Life / specified-illness / income protection / year (€)", min_value=0.0, value=900.0, step=50.0, format=MONEY_FMT)
+        life_ins = st.number_input("Life / specified-illness / income protection / year (€)", min_value=0.0, value=600.0, step=50.0, format=MONEY_FMT)
         note("Mortgage protection is often required. Family income protection is extra.")
     with m4:
-        other_life = st.number_input("Phone / streaming / pets / gifts / year (€)", min_value=0.0, value=1_800.0, step=50.0, format=MONEY_FMT)
+        other_life = st.number_input("Phone / streaming / pets / gifts / year (€)", min_value=0.0, value=1_200.0, step=50.0, format=MONEY_FMT)
         note("Two mobiles + TV + Christmas + a dog add up. Use this as a catch-all.")
     st.caption(
         "Also already in other tabs: LPT, utilities, broadband (Housing); cars (Cars); college (Family); "
